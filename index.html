@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d1117">
+    <title>IDW Pattern Engine</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            background-color: #161b22;
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #30363d;
+        }
+        h1 { text-align: center; color: #58a6ff; margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px; }
+        .subtitle { text-align: center; color: #8b949e; font-size: 12px; margin-bottom: 25px; }
+        .input-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .input-field { display: flex; flex-direction: column; }
+        label { font-size: 11px; color: #8b949e; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        input { padding: 14px; background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px; color: #ffffff; font-size: 18px; text-align: center; font-weight: bold; }
+        input:focus { outline: none; border-color: #58a6ff; }
+        button { width: 100%; padding: 16px; background: linear-gradient(135deg, #1f6feb, #1158c7); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; }
+        button:active { opacity: 0.9; }
+        .results { margin-top: 25px; display: none; border-top: 1px solid #30363d; padding-top: 20px; }
+        .prediction-box { text-align: center; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid; }
+        .pred-home { background-color: rgba(46, 160, 67, 0.15); color: #3fb950; border-color: #238636; }
+        .pred-away { background-color: rgba(248, 81, 73, 0.15); color: #f85149; border-color: #da3633; }
+        .pred-none { background-color: rgba(139, 148, 158, 0.15); color: #8b949e; border-color: #30363d; }
+        .pred-warn { background-color: rgba(210, 153, 34, 0.15); color: #d29922; border-color: #9e6a03; }
+        .pred-title { font-size: 24px; font-weight: 800; margin-bottom: 5px; letter-spacing: 1px; }
+        .pred-sub { font-size: 12px; font-weight: normal; opacity: 0.8; }
+        .stat-box { background-color: #0d1117; padding: 15px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; border: 1px solid #21262d; }
+        .stat-title { color: #8b949e; font-size: 11px; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; font-weight: bold; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .stat-row:last-child { margin-bottom: 0; }
+        .highlight { color: #58a6ff; font-weight: bold; }
+        .val-green { color: #3fb950; font-weight: bold; }
+        .val-red { color: #f85149; font-weight: bold; }
+        .val-yellow { color: #d29922; font-weight: bold; }
+        .history-box { background-color: #0d1117; padding: 15px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; border: 1px solid #21262d; }
+        .history-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #21262d; }
+        .history-item:last-child { border-bottom: none; }
+        .hist-odds { color: #8b949e; font-size: 11px; }
+        .hist-result { font-weight: bold; }
+        .hist-home { color: #3fb950; }
+        .hist-away { color: #f85149; }
+        .hist-draw { color: #d29922; }
+        .strategy { margin-top: 15px; padding: 15px; background-color: #0d1117; border-left: 4px solid #1f6feb; border-radius: 4px; font-size: 13px; line-height: 1.6; color: #c9d1d9; }
+        .strategy strong { color: #ffffff; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>IDW PATTERN ENGINE</h1>
+    <p class="subtitle">Inverse Distance Weighting (Granular Rates)</p>
+    <div class="input-group">
+        <div class="input-field"><label>Home Odds</label><input type="number" step="0.01" inputmode="decimal" id="homeOdds" placeholder="e.g. 2.10"></div>
+        <div class="input-field"><label>Draw Odds</label><input type="number" step="0.01" inputmode="decimal" id="drawOdds" placeholder="e.g. 3.40"></div>
+        <div class="input-field"><label>Away Odds</label><input type="number" step="0.01" inputmode="decimal" id="awayOdds" placeholder="e.g. 3.50"></div>
+    </div>
+    <button onclick="runPatternEngine()">FIND PATTERN & PREDICT</button>
+    <div class="results" id="results">
+        <div id="predBox" class="prediction-box"><div id="predTitle" class="pred-title"></div><div id="predSub" class="pred-sub"></div></div>
+        <div class="stat-box">
+            <div class="stat-title">Model Prediction (Variance Compressed)</div>
+            <div class="stat-row"><span>Home Probability:</span><span id="compH" class="highlight"></span></div>
+            <div class="stat-row"><span>Away Probability:</span><span id="compA" class="highlight"></span></div>
+            <div class="stat-row"><span>Home EV:</span><span id="evH"></span></div>
+            <div class="stat-row"><span>Away EV:</span><span id="evA"></span></div>
+        </div>
+        <div class="history-box">
+            <div class="stat-title">📊 7 Closest Historical Matches (Weighted)</div>
+            <div id="historyList"></div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid #30363d;">
+                <div class="stat-row"><span>Weighted Home Rate:</span><span id="histHomeRate" class="highlight"></span></div>
+                <div class="stat-row"><span>Weighted Away Rate:</span><span id="histAwayRate" class="highlight"></span></div>
+                <div class="stat-row"><span>Weighted Draw Rate:</span><span id="histDrawRate" class="highlight"></span></div>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-title">Pattern Divergence Check</div>
+            <div class="stat-row"><span>Model Says:</span><span id="modelSays" class="highlight"></span></div>
+            <div class="stat-row"><span>History Says:</span><span id="historySays" class="highlight"></span></div>
+            <div class="stat-row"><span>Divergence:</span><span id="divergence" class="highlight"></span></div>
+        </div>
+        <div class="strategy" id="strategy"></div>
+    </div>
+</div>
+<script>
+const historyData=[{h:1.74,d:3.75,a:5.2,result:'AWAY'},{h:3.15,d:4.2,a:2.1,result:'HOME'},{h:3.75,d:3.55,a:2.09,result:'HOME'},{h:1.64,d:4.6,a:4.9,result:'HOME'},{h:1.76,d:4.1,a:4.6,result:'HOME'},{h:3.5,d:3.7,a:2.1,result:'AWAY'},{h:2.15,d:3.5,a:3.55,result:'DRAW'},{h:2.19,d:3.2,a:3.3,result:'HOME'},{h:3.2,d:3.55,a:2.3,result:'AWAY'},{h:2.01,d:3.7,a:3.3,result:'DRAW'},{h:1.66,d:3.95,a:4.7,result:'AWAY'},{h:2.27,d:3.45,a:2.95,result:'HOME'},{h:2.08,d:3.55,a:3.6,result:'AWAY'},{h:3.05,d:3.95,a:2.05,result:'AWAY'},{h:1.6,d:3.85,a:4.8,result:'HOME'},{h:4.4,d:3.55,a:1.66,result:'AWAY'},{h:1.56,d:3.7,a:5.2,result:'HOME'},{h:1.53,d:4.9,a:5.2,result:'HOME'},{h:5.2,d:4.6,a:1.59,result:'AWAY'},{h:2.27,d:3.6,a:3.2,result:'AWAY'},{h:2.15,d:3.55,a:3.55,result:'HOME'},{h:3.1,d:3.55,a:2.36,result:'DRAW'},{h:2.48,d:4.6,a:2.45,result:'HOME'},{h:1.6,d:4.7,a:5.2,result:'DRAW'},{h:1.48,d:4.6,a:5.8,result:'AWAY'},{h:2.37,d:3.8,a:2.8,result:'HOME'},{h:4.7,d:4.4,a:1.63,result:'AWAY'},{h:2.37,d:3.5,a:3.1,result:'AWAY'},{h:5.4,d:4.0,a:1.58,result:'AWAY'},{h:1.48,d:4.6,a:5.6,result:'HOME'},{h:1.89,d:3.95,a:4.1,result:'HOME'},{h:5.6,d:4.2,a:1.63,result:'AWAY'},{h:3.1,d:3.8,a:2.06,result:'HOME'},{h:1.6,d:4.3,a:5.2,result:'DRAW'},{h:1.81,d:3.8,a:3.95,result:'HOME'},{h:3.65,d:4.1,a:1.88,result:'AWAY'},{h:2.18,d:3.7,a:3.35,result:'HOME'},{h:3.1,d:4.1,a:2.15,result:'AWAY'},{h:3.15,d:3.7,a:2.27,result:'AWAY'},{h:4.5,d:3.95,a:1.63,result:'DRAW'}];
+function runPatternEngine(){let h=parseFloat(document.getElementById('homeOdds').value);let d=parseFloat(document.getElementById('drawOdds').value);let a=parseFloat(document.getElementById('awayOdds').value);if(isNaN(h)||isNaN(d)||isNaN(a)||h<=1||d<=1||a<=1){alert("Please enter valid decimal odds (greater than 1.00).");return;}let pH=1/h;let pD=1/d;let pA=1/a;let total=pH+pD+pA;let normH=pH/total;let normD=pD/total;let normA=pA/total;let h2=normH+normD*(normH/(normH+normA));let a2=normA+normD*(normA/(normH+normA));const compression=0.35;let compH=h2-(compression*(h2-0.5));let compA=a2-(compression*(a2-0.5));let evH=(compH*h)-1;let evA=(compA*a)-1;let distances=historyData.map(match=>{let dist=Math.sqrt(Math.pow(h-match.h,2)+Math.pow(d-match.d,2)+Math.pow(a-match.a,2));return{...match,distance:dist};});distances.sort((a,b)=>a.distance-b.distance);let closest7=distances.slice(0,7);let totalWeight=0;let weightHome=0;let weightAway=0;let weightDraw=0;closest7.forEach(m=>{let weight=1/(m.distance+0.01);totalWeight+=weight;if(m.result==='HOME')weightHome+=weight;else if(m.result==='AWAY')weightAway+=weight;else if(m.result==='DRAW')weightDraw+=weight;});let histHomeRate=weightHome/totalWeight;let histAwayRate=weightAway/totalWeight;let histDrawRate=weightDraw/totalWeight;let modelPick=evH>evA?'HOME':'AWAY';let modelEV=Math.max(evH,evA);let historyPick=histHomeRate>histAwayRate?'HOME':(histAwayRate>histHomeRate?'AWAY':'DRAW');let divergence=0;if(modelPick==='HOME'){divergence=Math.abs(compH-histHomeRate);}else{divergence=Math.abs(compA-histAwayRate);}let historyHTML=closest7.map(m=>{let resultClass=m.result==='HOME'?'hist-home':(m.result==='AWAY'?'hist-away':'hist-draw');let weightPercent=((1/(m.distance+0.01))/totalWeight*100).toFixed(0);return`<div class="history-item"><span class="hist-odds">${m.h}/${m.d}/${m.a} <span style="color:#58a6ff">(${weightPercent}% weight)</span></span><span class="hist-result ${resultClass}">${m.result}</span></div>`;}).join('');document.getElementById('historyList').innerHTML=historyHTML;let predBox=document.getElementById('predBox');let predTitle=document.getElementById('predTitle');let predSub=document.getElementById('predSub');let strategy=document.getElementById('strategy');if(divergence>0.20&&modelEV<0.10){predBox.className="prediction-box pred-warn";predTitle.innerText="⚠️ HISTORY CONTRADICTS MODEL";predSub.innerText=`Divergence: ${(divergence*100).toFixed(1)}% - High Risk`;strategy.innerHTML=`<strong>Warning:</strong> The model predicts <strong>${modelPick}</strong> with +${(modelEV*100).toFixed(1)}% EV, but weighted historical patterns show <strong>${historyPick}</strong> is more likely. <br><br><strong>Action:</strong> REDUCE STAKE or PASS.`;}else if(modelEV>=0.04&&divergence<=0.15){if(modelPick==='HOME'){predBox.className="prediction-box pred-home";predTitle.innerText="HOME WIN";predSub.innerText=`Model +${(evH*100).toFixed(1)}% EV | History: ${(histHomeRate*100).toFixed(1)}% Home Rate`;strategy.innerHTML=`<strong>Aligned Signal:</strong> Both the variance-compressed model and weighted historical patterns favor <strong>HOME</strong>. <br><br><strong>Action:</strong> Back Home Win with confidence.`;}else{predBox.className="prediction-box pred-away";predTitle.innerText="AWAY WIN";predSub.innerText=`Model +${(evA*100).toFixed(1)}% EV | History: ${(histAwayRate*100).toFixed(1)}% Away Rate`;strategy.innerHTML=`<strong>Aligned Signal:</strong> Both the variance-compressed model and weighted historical patterns favor <strong>AWAY</strong>. <br><br><strong>Action:</strong> Back Away Win with confidence.`;}}else if(modelEV>=0.04&&divergence>0.15){predBox.className="prediction-box pred-warn";predTitle.innerText="⚠️ CAUTION - MIXED SIGNALS";predSub.innerText=`Model: ${modelPick} | History favors: ${historyPick}`;strategy.innerHTML=`<strong>Mixed Signals:</strong> The model shows +${(modelEV*100).toFixed(1)}% EV for <strong>${modelPick}</strong>, but historical data weighted by similarity favors <strong>${historyPick}</strong>. <br><br><strong>Action:</strong> Reduce stake by 50% or PASS.`;}else{predBox.className="prediction-box pred-none";predTitle.innerText="NO PREDICTION";predSub.innerText="Insufficient Edge";strategy.innerHTML=`<strong>No Edge:</strong> Model EV is only +${(modelEV*100).toFixed(1)}%, below our 4% threshold. <br><br><strong>Action:</strong> DO NOT BET. Preserve capital.`;}document.getElementById('results').style.display='block';document.getElementById('compH').innerText=(compH*100).toFixed(1)+"%";document.getElementById('compA').innerText=(compA*100).toFixed(1)+"%";let evH_el=document.getElementById('evH');evH_el.innerText=(evH*100).toFixed(1)+"%";evH_el.className=evH>=0.04?"val-green":"val-red";let evA_el=document.getElementById('evA');evA_el.innerText=(evA*100).toFixed(1)+"%";evA_el.className=evA>=0.04?"val-green":"val-red";document.getElementById('histHomeRate').innerText=(histHomeRate*100).toFixed(1)+"%";document.getElementById('histHomeRate').className=histHomeRate>0.45?"val-green":"highlight";document.getElementById('histAwayRate').innerText=(histAwayRate*100).toFixed(1)+"%";document.getElementById('histAwayRate').className=histAwayRate>0.45?"val-red":"highlight";document.getElementById('histDrawRate').innerText=(histDrawRate*100).toFixed(1)+"%";document.getElementById('modelSays').innerText=modelPick+" (+"+(modelEV*100).toFixed(1)+"% EV)";document.getElementById('historySays').innerText=historyPick+" ("+(Math.max(histHomeRate,histAwayRate)*100).toFixed(1)+"% rate)";document.getElementById('divergence').innerText=(divergence*100).toFixed(1)+"%";document.getElementById('divergence').className=divergence>0.20?"val-red":(divergence>0.10?"val-yellow":"val-green");}
+</script>
+</body>
+</html>
